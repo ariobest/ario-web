@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { Activity, ArrowRight, Check, ChevronDown, Code2, Github, LayoutDashboard, LogIn, LogOut, Menu, Moon, Palette, ShieldCheck, Sparkles, Terminal, UserRound, Users, X, Zap } from 'lucide-react';
 
@@ -54,7 +54,7 @@ export default function App() {
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
 
-  const submitAuth = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage('');
     if (!supabase) {
