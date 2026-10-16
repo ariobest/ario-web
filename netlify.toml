@@ -1,13 +1,9 @@
 [build]
   command = "npm run build"
-  publish = "dist/client"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
-
-# TanStack Start SSR/server functions require the official
-# @netlify/vite-plugin-tanstack-start plugin in vite.config.ts.
-# Do not deploy until the source app is migrated and that plugin is configured.
 
 [[headers]]
   for = "/*"
