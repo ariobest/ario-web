@@ -1,54 +1,67 @@
 # ARIO SCRIPTS
 
-A responsive, dark-themed ARIO SCRIPTS hub built with React, TypeScript, Vite, and Lucide icons.
+A responsive ARIO SCRIPTS creator hub built with React, TypeScript, Vite, Supabase JS, and Lucide icons.
 
-## Current website
+## What's in this version
 
-The repository now contains a working frontend preview with:
-- Responsive landing page and ARIO SCRIPTS branding
-- Search across listing titles, games, and descriptions
-- Category filters and sorting
-- Featured cards and script detail dialogs
-- Lua-style code viewer with copy-to-clipboard
-- Saved/favorite listings and a saved-only filter
-- Responsive mobile navigation and polished hover states
-- Clear preview labels so sample listings are not mistaken for live database records
+- New animated dark interface with a custom terminal-style ARIO logo
+- Four selectable accent themes: Midnight, Ocean, Emerald, and Rose
+- Theme choice saved in this browser
+- Sign-up and sign-in screen wired to Supabase Auth when environment variables are configured
+- Owner dashboard UI reserved in the interface for `ariobesst2014@gmail.com`
+- Original hard-coded demo script listings removed; the home page does not pretend sample listings are real
+- Responsive layout, hover effects, reduced-motion support, and mobile navigation
 
-**Important:** the listings are demonstration content, not live Supabase data. Favorites currently live only in component state and reset when the page reloads. Sign-in, admin CRUD, badges backed by roles, protected script delivery, and real analytics are not connected yet.
+## Supabase environment variables
 
-## Run locally
+Copy the contents of [`.env.example`](./.env.example). Replace the placeholder publishable key with the real publishable key from your Supabase project's API settings.
+
+```env
+VITE_SUPABASE_URL=https://yxbzblbtzqioexszjjkc.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_PASTE_YOUR_REAL_KEY_HERE
+```
+
+The publishable key is intended to be used in a browser app. **Never** add a Supabase service-role or secret key to a `VITE_*` variable or commit it to GitHub.
+
+### Add the variables to Netlify
+
+1. Open your site in Netlify.
+2. Go to **Site configuration → Environment variables** (the exact menu label can vary).
+3. Add `VITE_SUPABASE_URL` with the project URL above.
+4. Add `VITE_SUPABASE_PUBLISHABLE_KEY` with your actual publishable key.
+5. Trigger a new deploy so Vite bakes the new values into the frontend bundle.
+
+Do not paste the whole `.env` file into a single Netlify variable. Add each variable separately with its name and value.
+
+## Local development
 
 Requires Node.js 22 or a compatible recent Node.js release.
 
 ```bash
 npm install
 npm run dev
-```
-
-To type-check and build:
-
-```bash
 npm run typecheck
 npm run build
 npm run preview
 ```
 
-## Netlify
+## Netlify build
 
-The current frontend is a Vite single-page app. Netlify uses `npm run build` and publishes `dist`, configured in `netlify.toml`. Connect this repository to Netlify to create a deploy preview.
+The current app is a Vite single-page application. Netlify uses:
 
-## Selected Supabase project
+- Build command: `npm run build`
+- Publish directory: `dist`
 
-`https://yxbzblbtzqioexszjjkc.supabase.co`
+These settings are in `netlify.toml`.
 
-The project URL is recorded in `.env.example`, but the connected Supabase management account did not grant access to inspect the project. No database changes have been made. Do not treat the current sample listings as live records or add privileged credentials to browser code.
+## Important backend and security status
 
-Before connecting Supabase, verify access and inspect the live schema, RLS policies, auth settings, storage buckets, and functions. Keep publishable keys public and protected with RLS. Keep any service-role key server-only; never put it in a `VITE_*` variable.
+- Supabase sign-up/sign-in uses Supabase Auth when the two environment variables are configured. The Supabase project's Auth settings still need to allow the desired sign-up and redirect URLs.
+- The selected project is `https://yxbzblbtzqioexszjjkc.supabase.co`. The connected management account did not grant access to inspect it, so its tables, Auth configuration, and RLS policies have not been verified or changed.
+- The dashboard checks the signed-in email in the frontend for display/navigation. This is **not sufficient authorization for real admin operations**. Before adding script management, user management, uploads, analytics, or protected delivery, enforce the owner role with trusted server-side checks and Supabase RLS policies.
+- The script database, CRUD, role-backed badges, real execution analytics, and protected delivery are not connected yet.
+- A browser-delivered script can always be copied by a determined visitor. Disabling right-click or Ctrl+A does not secure it, so this site does not disable those standard browser/accessibility shortcuts.
 
 ## Original source
 
-The original app repository is [ArioScripts/arioscripthub](https://github.com/ArioScripts/arioscripthub). This target currently has a newly built frontend preview and is **not yet a complete migration** of all original TanStack Start server routes and backend features. Preserve and merge the original app's working functionality during the next migration phase.
-
-## Security and script delivery
-
-A script sent to a user's browser can be copied. Do not promise source secrecy after delivery. Any future privileged operations must be authorized in trusted server-side code and protected by database RLS.
+The original site repository is [ArioScripts/arioscripthub](https://github.com/ArioScripts/arioscripthub). This target remains a redesign/frontend step rather than a complete migration of all original TanStack Start routes and server functions.
