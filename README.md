@@ -2,35 +2,39 @@
 
 > Migration target: `ariobest/ario-web`. Original source: [ArioScripts/arioscripthub](https://github.com/ArioScripts/arioscripthub).
 
-## Important migration status
+## Migration status
 
-This repository was empty when migration work began. The original app is a Vite + TanStack Start + React + TypeScript project, not Next.js. Do not replace it with a generic template. The source application files, existing routes, branding, and data must be copied from the source repository before this target can be considered a migrated, buildable website.
+The target repository began without the original application files. I verified that the source app is Vite + TanStack Start + React + TypeScript, not Next.js. This target still does not contain the source app's `package.json`, Vite config, routes, components, assets, or lockfile, so it is **not yet a complete or buildable migration**. The existing branding and features must be copied from the source before the target can be considered ready.
 
-The configuration and database assets in this repository are migration scaffolding only; they do not prove the app has been deployed or that the Supabase project has been inspected or modified.
+This repository currently contains migration/deployment notes and environment examples only. No production database schema or data was changed, and no build or deployment has been verified.
+
+## Selected Supabase project
+
+`https://yxbzblbtzqioexszjjkc.supabase.co`
+
+The connected Supabase management account did not grant access to inspect this project. I could not verify tables, migrations, RLS policies, authentication settings, storage buckets, or Edge Functions. Do not apply database changes until access is fixed and the live schema is inspected.
 
 ## Environment variables
 
 Configure these in Netlify Site configuration → Environment variables. Keep privileged values server-only.
 
-- `VITE_SUPABASE_URL` — public Supabase project URL (`https://rytypdggxpklraueimzi.supabase.co`).
+- `VITE_SUPABASE_URL` — `https://yxbzblbtzqioexszjjkc.supabase.co` (public URL).
 - `VITE_SUPABASE_PUBLISHABLE_KEY` — public/publishable key only; never a service-role key.
 - `SUPABASE_URL` — server-side project URL.
 - `SUPABASE_PUBLISHABLE_KEY` — server-side publishable key where needed.
-- `SUPABASE_SERVICE_ROLE_KEY` — server-only secret, only for trusted server functions that genuinely require it. Never prefix it with `VITE_`.
+- `SUPABASE_SERVICE_ROLE_KEY` — only if a trusted server function genuinely requires it. Store as a secret and never prefix it with `VITE_`.
 
 Use `.env.example` as a local template. Never commit real credentials.
 
-## Supabase migrations
-
-Review `supabase/migrations/` against the live project before applying anything. Back up production data first. The provided migration is additive and intentionally does not drop or rewrite existing tables.
-
 ## Netlify
 
-The framework adapter/build output must be finalized after the complete source repository has been copied and the installed TanStack Start/Nitro versions are tested together. Do not treat a successful static publish as proof that server routes work. Deploy a preview first, test SSR and nested route refreshes, authentication redirects, and server functions, then promote to production.
+The source uses TanStack Start server functions, so a static-only publish is insufficient. Follow the [official Netlify TanStack Start guide](https://docs.netlify.com/build/frameworks/framework-setup-guides/tanstack-start/) to add `@netlify/vite-plugin-tanstack-start` to the existing Vite configuration while preserving the app's current plugins. Current guidance uses `vite build` and publishes `dist/client`, with SSR/server functions deployed as Netlify Functions.
+
+After the full source tree is migrated, run install, lint/type-check, and production build. Deploy a preview first and test SSR, nested route refreshes, authentication redirects, and server functions before production promotion.
 
 ## Security notes
 
 - Supabase RLS is mandatory for browser-accessible tables.
-- Public/publishable keys are not secrets; service-role keys are.
-- A role shown in client state is not authorization. Privileged actions must be checked server-side and in database policies.
-- Lua delivered to a client can be copied. This project cannot guarantee source secrecy after delivery.
+- Publishable keys are not secrets; service-role keys are.
+- A role shown in client state is not authorization. Privileged actions must be checked server-side and by database policies.
+- Lua delivered to a client can be copied. No client-delivery system can guarantee source secrecy after delivery.
