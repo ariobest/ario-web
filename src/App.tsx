@@ -5,7 +5,7 @@ import { Activity, ArrowRight, Check, ChevronDown, Code2, Github, LayoutDashboar
 const ADMIN_EMAIL = 'ariobesst2014@gmail.com';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
-const supabase: SupabaseClient | null = supabaseUrl && supabaseKey && !supabaseKey.startsWith('your-')
+const supabase: SupabaseClient | null = supabaseUrl && supabaseKey && !supabaseKey.startsWith('your-') && !supabaseKey.includes('PASTE_YOUR_REAL_KEY_HERE')
   ? createClient(supabaseUrl, supabaseKey)
   : null;
 
