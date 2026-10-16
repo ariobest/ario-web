@@ -1,40 +1,54 @@
-# ARIO SCRIPTS — Netlify migration workspace
+# ARIO SCRIPTS
 
-> Migration target: `ariobest/ario-web`. Original source: [ArioScripts/arioscripthub](https://github.com/ArioScripts/arioscripthub).
+A responsive, dark-themed ARIO SCRIPTS hub built with React, TypeScript, Vite, and Lucide icons.
 
-## Migration status
+## Current website
 
-The target repository began without the original application files. I verified that the source app is Vite + TanStack Start + React + TypeScript, not Next.js. This target still does not contain the source app's `package.json`, Vite config, routes, components, assets, or lockfile, so it is **not yet a complete or buildable migration**. The existing branding and features must be copied from the source before the target can be considered ready.
+The repository now contains a working frontend preview with:
+- Responsive landing page and ARIO SCRIPTS branding
+- Search across listing titles, games, and descriptions
+- Category filters and sorting
+- Featured cards and script detail dialogs
+- Lua-style code viewer with copy-to-clipboard
+- Saved/favorite listings and a saved-only filter
+- Responsive mobile navigation and polished hover states
+- Clear preview labels so sample listings are not mistaken for live database records
 
-This repository currently contains migration/deployment notes and environment examples only. No production database schema or data was changed, and no build or deployment has been verified.
+**Important:** the listings are demonstration content, not live Supabase data. Favorites currently live only in component state and reset when the page reloads. Sign-in, admin CRUD, badges backed by roles, protected script delivery, and real analytics are not connected yet.
+
+## Run locally
+
+Requires Node.js 22 or a compatible recent Node.js release.
+
+```bash
+npm install
+npm run dev
+```
+
+To type-check and build:
+
+```bash
+npm run typecheck
+npm run build
+npm run preview
+```
+
+## Netlify
+
+The current frontend is a Vite single-page app. Netlify uses `npm run build` and publishes `dist`, configured in `netlify.toml`. Connect this repository to Netlify to create a deploy preview.
 
 ## Selected Supabase project
 
 `https://yxbzblbtzqioexszjjkc.supabase.co`
 
-The connected Supabase management account did not grant access to inspect this project. I could not verify tables, migrations, RLS policies, authentication settings, storage buckets, or Edge Functions. Do not apply database changes until access is fixed and the live schema is inspected.
+The project URL is recorded in `.env.example`, but the connected Supabase management account did not grant access to inspect the project. No database changes have been made. Do not treat the current sample listings as live records or add privileged credentials to browser code.
 
-## Environment variables
+Before connecting Supabase, verify access and inspect the live schema, RLS policies, auth settings, storage buckets, and functions. Keep publishable keys public and protected with RLS. Keep any service-role key server-only; never put it in a `VITE_*` variable.
 
-Configure these in Netlify Site configuration → Environment variables. Keep privileged values server-only.
+## Original source
 
-- `VITE_SUPABASE_URL` — `https://yxbzblbtzqioexszjjkc.supabase.co` (public URL).
-- `VITE_SUPABASE_PUBLISHABLE_KEY` — public/publishable key only; never a service-role key.
-- `SUPABASE_URL` — server-side project URL.
-- `SUPABASE_PUBLISHABLE_KEY` — server-side publishable key where needed.
-- `SUPABASE_SERVICE_ROLE_KEY` — only if a trusted server function genuinely requires it. Store as a secret and never prefix it with `VITE_`.
+The original app repository is [ArioScripts/arioscripthub](https://github.com/ArioScripts/arioscripthub). This target currently has a newly built frontend preview and is **not yet a complete migration** of all original TanStack Start server routes and backend features. Preserve and merge the original app's working functionality during the next migration phase.
 
-Use `.env.example` as a local template. Never commit real credentials.
+## Security and script delivery
 
-## Netlify
-
-The source uses TanStack Start server functions, so a static-only publish is insufficient. Follow the [official Netlify TanStack Start guide](https://docs.netlify.com/build/frameworks/framework-setup-guides/tanstack-start/) to add `@netlify/vite-plugin-tanstack-start` to the existing Vite configuration while preserving the app's current plugins. Current guidance uses `vite build` and publishes `dist/client`, with SSR/server functions deployed as Netlify Functions.
-
-After the full source tree is migrated, run install, lint/type-check, and production build. Deploy a preview first and test SSR, nested route refreshes, authentication redirects, and server functions before production promotion.
-
-## Security notes
-
-- Supabase RLS is mandatory for browser-accessible tables.
-- Publishable keys are not secrets; service-role keys are.
-- A role shown in client state is not authorization. Privileged actions must be checked server-side and by database policies.
-- Lua delivered to a client can be copied. No client-delivery system can guarantee source secrecy after delivery.
+A script sent to a user's browser can be copied. Do not promise source secrecy after delivery. Any future privileged operations must be authorized in trusted server-side code and protected by database RLS.
