@@ -72,9 +72,10 @@ export default function App() {
         if (error) throw error;
         setMessage('Account created. Check your email to confirm your address if email confirmation is enabled.');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
         setMessage('Signed in successfully.');
+        setPage(data.user?.email?.toLowerCase() === ADMIN_EMAIL ? 'admin' : 'home');
       }
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not complete authentication.');
