@@ -1,13 +1,13 @@
 [build]
   command = "npm run build"
-  publish = ".output/public"
+  publish = "dist/client"
 
 [build.environment]
   NODE_VERSION = "22"
-  NITRO_PRESET = "netlify"
 
-# TanStack Start/Nitro must emit its Netlify server function for SSR and server routes.
-# Verify the generated output in a deploy preview before production promotion.
+# TanStack Start SSR/server functions require the official
+# @netlify/vite-plugin-tanstack-start plugin in vite.config.ts.
+# Do not deploy until the source app is migrated and that plugin is configured.
 
 [[headers]]
   for = "/*"
