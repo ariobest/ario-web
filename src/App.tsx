@@ -99,15 +99,16 @@ export default function App() {
           <span className="brand-mark"><Terminal size={22} strokeWidth={2.5} /></span>
           <span className="brand-name">ARIO<span> SCRIPTS</span><small>THE CREATOR HUB</small></span>
         </button>
-        <nav className={mobileMenu ? 'nav-links nav-open' : 'nav-links'}>
+        <nav className={mobileMenu ? 'nav-links nav-open' : 'nav-links'} aria-label="Main navigation">
           <button className={page === 'home' ? 'nav-link active' : 'nav-link'} onClick={() => { setPage('home'); setMobileMenu(false); }}>Home</button>
           <button className="nav-link" onClick={() => { setThemeMenu(!themeMenu); setMobileMenu(false); }}><Palette size={15} /> Themes</button>
           {isAdmin && <button className={page === 'admin' ? 'nav-link active' : 'nav-link'} onClick={() => { setPage('admin'); setMobileMenu(false); }}><LayoutDashboard size={15} /> Admin panel</button>}
+          {!user && <button className="nav-link" onClick={() => { setPage('login'); setAuthMode('signin'); setMessage(''); setMobileMenu(false); }}><LogIn size={15} /> Sign in</button>}
+          {user && <button className="nav-link" onClick={() => { void signOut(); setMobileMenu(false); }}><LogOut size={15} /> Sign out</button>}
         </nav>
         <div className="top-actions">
-          <button className="theme-trigger" onClick={() => setThemeMenu(!themeMenu)} aria-label="Choose theme"><Palette size={16} /><span>Theme</span><ChevronDown size={13} /></button>
-          {user ? <button className="account-button" onClick={signOut}><LogOut size={15} /><span>Sign out</span></button> : <button className="login-button" onClick={() => { setPage('login'); setMessage(''); }}><UserRound size={15} /> Sign in <ArrowRight size={14} /></button>}
-          <button className="mobile-menu" aria-label="Toggle navigation" onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X /> : <Menu />}</button>
+          {!user ? <button className="login-button" onClick={() => { setPage('login'); setAuthMode('signup'); setMessage(''); }}><UserRound size={15} /> Sign up <ArrowRight size={14} /></button> : <button className="account-button" onClick={signOut}><LogOut size={15} /><span>Sign out</span></button>}
+          <button className="mobile-menu" aria-label="Toggle navigation" aria-expanded={mobileMenu} onClick={() => setMobileMenu(!mobileMenu)}>{mobileMenu ? <X /> : <Menu />}</button>
         </div>
         {themeMenu && <div className="theme-popover"><div className="popover-heading"><span>Choose your vibe</span><button aria-label="Close themes" onClick={() => setThemeMenu(false)}><X size={15} /></button></div>{themes.map((item) => <button key={item.id} className={theme === item.id ? 'theme-option chosen' : 'theme-option'} onClick={() => { setTheme(item.id); setThemeMenu(false); }}><span className="theme-swatch" style={{ background: item.color, boxShadow: `0 0 16px ${item.color}55` }} /><span className="theme-option-copy"><b>{item.name}</b><small>{item.description}</small></span>{theme === item.id && <Check size={16} />}</button>)}</div>}
       </header>
