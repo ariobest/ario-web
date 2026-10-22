@@ -4,7 +4,7 @@
 
 The target repository now has a redesigned React + TypeScript + Vite frontend with an animated ARIO SCRIPTS logo, four accent themes, a sign-up/sign-in screen wired to Supabase Auth, and an owner-dashboard interface. The previous hard-coded sample script listings have been removed.
 
-The selected Supabase project's metadata, tables, Auth configuration, and RLS policies could not be inspected through the connected management account. No database changes have been made. Script CRUD, role-backed badges, protected script delivery, and real analytics are not connected.
+The active Supabase project was inspected. It already contains `scripts`, `script_keys`, `script_key_challenges`, and the `script-api` Edge Function. The frontend now includes a server-backed key verification page and an owner Verification tab for creating scripts with generated slugs. Netlify must use the same active project's URL and publishable key for sign-in and admin script management.
 
 ## Netlify deployment
 
@@ -20,8 +20,8 @@ Connect `ariobest/ario-web` to Netlify. After setting environment variables, tri
 The `.env.example` file is a template. Add these as two separate Netlify environment variables:
 
 ```env
-VITE_SUPABASE_URL=https://yxbzblbtzqioexszjjkc.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_PASTE_YOUR_REAL_KEY_HERE
+VITE_SUPABASE_URL=https://cqtwmxojwwyeasstuhgb.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_qBPb1ltQbHNZ-fO3PFmDeg_IQj0QfNB
 ```
 
 Replace the placeholder with the actual publishable key from Supabase project API settings. In Netlify, add each variable by name and value; do not paste the entire file into one variable.
@@ -30,7 +30,7 @@ The publishable key is expected to be visible in browser code. Never add a servi
 
 ## Supabase Auth setup
 
-1. Confirm you can open project `yxbzblbtzqioexszjjkc` in the Supabase dashboard.
+1. Confirm you can open project `cqtwmxojwwyeasstuhgb` in the Supabase dashboard.
 2. In Authentication settings, configure allowed sign-up methods and email confirmation as desired.
 3. Add the local development URL and your deployed Netlify site URL to the allowed redirect/site URL configuration as appropriate.
 4. Add the two environment variables above in Netlify and redeploy.
@@ -38,15 +38,15 @@ The publishable key is expected to be visible in browser code. Never add a servi
 
 ## Owner/admin security
 
-The UI recognizes `ariobesst2014@gmail.com` for showing the owner dashboard. A browser-only email check is not a secure authorization boundary. Before enabling script creation, uploads, user management, analytics, or other privileged actions, enforce authorization with trusted server-side checks and correctly designed Supabase RLS policies. Do not rely on hidden buttons or client state for security.
+The UI recognizes `arioscripts@gmail.com` for the owner dashboard; the active database has an `admin` role for this account. Server-side operations still enforce the `user_roles` admin role. A browser-only email check is not a secure authorization boundary. Before enabling script creation, uploads, user management, analytics, or other privileged actions, enforce authorization with trusted server-side checks and correctly designed Supabase RLS policies. Do not rely on hidden buttons or client state for security.
 
 ## Migration checklist
 
 - [ ] Inspect the live Supabase schema, policies, Auth settings, storage, and functions
 - [ ] Migrate original routes, components, assets, and server functions from the source app
-- [ ] Implement real script reads/writes with RLS
+- [x] Connect script creation and listing to existing `scripts` table policies
 - [ ] Add a server-enforced owner role and test non-owner denial
 - [ ] Add persistent favorites, role-backed badges, reports, and measured analytics
-- [ ] Design protected script delivery without promising delivered code remains secret
+- [x] Connect the UI to the existing `script-api` key validation and key claim endpoints
 - [ ] Add storage policies and upload type/size validation
 - [ ] Run type-check/build and test a Netlify deploy preview
