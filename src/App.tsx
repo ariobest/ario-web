@@ -5,6 +5,7 @@ import { Activity, ArrowRight, Check, ChevronDown, Code2, Github, LayoutDashboar
 const ADMIN_EMAIL = 'arioscripts@gmail.com';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const SCRIPT_API_URL = 'https://cqtwmxojwwyeasstuhgb.supabase.co/functions/v1/script-api';
 const supabase: SupabaseClient | null = supabaseUrl && supabaseKey && !supabaseKey.startsWith('your-') && !supabaseKey.includes('PASTE_YOUR_REAL_KEY_HERE')
   ? createClient(supabaseUrl, supabaseKey)
   : null;
@@ -105,8 +106,7 @@ export default function App() {
   const verifyEnteredKey = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setVerifyBusy(true); setVerifyMessage('Checking key with the server…'); setIssuedKey('');
     try {
-      if (!supabaseUrl) throw new Error('Key API is not configured.');
-      const response = await fetch(supabaseUrl + '/functions/v1/script-api', {
+      const response = await fetch(SCRIPT_API_URL, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'validate', key: verifyKey.trim().toUpperCase(), script: verifySlug.trim().toLowerCase() }),
       });
@@ -120,7 +120,6 @@ export default function App() {
   const requestKey = async () => {
     setVerifyBusy(true); setVerifyMessage('Starting key request…'); setIssuedKey('');
     try {
-      if (!supabaseUrl) throw new Error('Key API is not configured.');
       const slug = verifySlug.trim().toLowerCase();
       if (!slug) throw new Error('Enter the script slug first.');
       let clientId = window.localStorage.getItem('ario-key-client-id');
@@ -129,7 +128,7 @@ export default function App() {
         clientId = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
         window.localStorage.setItem('ario-key-client-id', clientId);
       }
-      const endpoint = supabaseUrl + '/functions/v1/script-api';
+      const endpoint = SCRIPT_API_URL;
       const start = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'start-key', script:slug, client_id:clientId}) });
       const startData = await start.json();
       if (!start.ok || !startData.token) throw new Error(startData.error || 'Could not start key request.');
