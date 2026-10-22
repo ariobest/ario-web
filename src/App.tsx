@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import { Activity, ArrowRight, Check, ChevronDown, Code2, Github, LayoutDashboard, LogIn, LogOut, Menu, Moon, Palette, ShieldCheck, Sparkles, Terminal, UserRound, Users, X, Zap } from 'lucide-react';
 
-const ADMIN_EMAIL = 'ariobesst2014@gmail.com';
+const ADMIN_EMAIL = 'arioscripts@gmail.com';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 const supabase: SupabaseClient | null = supabaseUrl && supabaseKey && !supabaseKey.startsWith('your-') && !supabaseKey.includes('PASTE_YOUR_REAL_KEY_HERE')
@@ -32,7 +32,12 @@ export default function App() {
   });
   const [themeMenu, setThemeMenu] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [page, setPage] = useState<'home' | 'login' | 'admin'>('home');
+  const [page, setPage] = useState<'home' | 'login' | 'admin' | 'verify'>('home');
+  const [verifySlug, setVerifySlug] = useState('');
+  const [verifyKey, setVerifyKey] = useState('');
+  const [verifyMessage, setVerifyMessage] = useState('');
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [issuedKey, setIssuedKey] = useState('');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -53,6 +58,48 @@ export default function App() {
   }, []);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
+
+  const verifyEnteredKey = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setVerifyBusy(true); setVerifyMessage('Checking key with the server…'); setIssuedKey('');
+    try {
+      if (!supabaseUrl) throw new Error('Key API is not configured.');
+      const response = await fetch(supabaseUrl + '/functions/v1/script-api', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'validate', key: verifyKey.trim().toUpperCase(), script: verifySlug.trim().toLowerCase() }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.valid) throw new Error(data.error || 'Key is invalid for this script.');
+      setVerifyMessage('Key verified successfully for ' + (data.script?.name || verifySlug) + '.');
+    } catch (error) { setVerifyMessage(error instanceof Error ? error.message : 'Could not verify the key.'); }
+    finally { setVerifyBusy(false); }
+  };
+
+  const requestKey = async () => {
+    setVerifyBusy(true); setVerifyMessage('Starting key request…'); setIssuedKey('');
+    try {
+      if (!supabaseUrl) throw new Error('Key API is not configured.');
+      const slug = verifySlug.trim().toLowerCase();
+      if (!slug) throw new Error('Enter the script slug first.');
+      let clientId = window.localStorage.getItem('ario-key-client-id');
+      if (!clientId) {
+        const bytes = crypto.getRandomValues(new Uint8Array(24));
+        clientId = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+        window.localStorage.setItem('ario-key-client-id', clientId);
+      }
+      const endpoint = supabaseUrl + '/functions/v1/script-api';
+      const start = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'start-key', script:slug, client_id:clientId}) });
+      const startData = await start.json();
+      if (!start.ok || !startData.token) throw new Error(startData.error || 'Could not start key request.');
+      setVerifyMessage('Please wait while your key is generated…');
+      await new Promise(resolve => window.setTimeout(resolve, 2300));
+      const claim = await fetch(endpoint, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({action:'claim-key', script:slug, token:startData.token, client_id:clientId}) });
+      const claimData = await claim.json();
+      if (!claim.ok || !claimData.key) throw new Error(claimData.error || 'Could not issue your key.');
+      setIssuedKey(claimData.key); setVerifyKey(claimData.key);
+      setVerifyMessage('Key created successfully. It is valid for 24 hours.');
+    } catch (error) { setVerifyMessage(error instanceof Error ? error.message : 'Could not get a key.'); }
+    finally { setVerifyBusy(false); }
+  };
 
   const submitAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -102,6 +149,7 @@ export default function App() {
         <nav className={mobileMenu ? 'nav-links nav-open' : 'nav-links'} aria-label="Main navigation">
           <button className={page === 'home' ? 'nav-link active' : 'nav-link'} onClick={() => { setPage('home'); setMobileMenu(false); }}>Home</button>
           <button className="nav-link" onClick={() => { setThemeMenu(!themeMenu); setMobileMenu(false); }}><Palette size={15} /> Themes</button>
+          <button className={page === 'verify' ? 'nav-link active' : 'nav-link'} onClick={() => { setPage('verify'); setMobileMenu(false); setVerifyMessage(''); }}><ShieldCheck size={15} /> Get / verify key</button>
           {isAdmin && <button className={page === 'admin' ? 'nav-link active' : 'nav-link'} onClick={() => { setPage('admin'); setMobileMenu(false); }}><LayoutDashboard size={15} /> Admin panel</button>}
           {!user && <button className="nav-link" onClick={() => { setPage('login'); setAuthMode('signin'); setMessage(''); setMobileMenu(false); }}><LogIn size={15} /> Sign in</button>}
           {user && <button className="nav-link" onClick={() => { void signOut(); setMobileMenu(false); }}><LogOut size={15} /> Sign out</button>}
@@ -157,6 +205,20 @@ export default function App() {
             {message && <div className={message.toLowerCase().includes('could not') || message.toLowerCase().includes('invalid') || message.toLowerCase().includes('not configured') || message.toLowerCase().includes('setup') ? 'form-message error' : 'form-message'}>{message}</div>}
             <div className="auth-switch">{authMode === 'signin' ? 'New to ARIO SCRIPTS?' : 'Already have an account?'} <button onClick={() => { setAuthMode(authMode === 'signin' ? 'signup' : 'signin'); setMessage(''); }}>{authMode === 'signin' ? 'Create an account' : 'Sign in'}</button></div>
             <div className="auth-foot"><ShieldCheck size={14} /> Never share your password with anyone.</div>
+          </div>
+        </section>}
+
+        {page === 'verify' && <section className="auth-layout key-layout">
+          <div className="auth-aside"><div className="auth-brand-symbol"><ShieldCheck size={34} /></div><div className="section-kicker"><ShieldCheck size={14} /> ARIO KEY SYSTEM</div><h1>Verify your<br /><span className="gradient-text">access.</span></h1><p>Get a script-specific key or check an existing key. Validation happens on the server against the selected script.</p><div className="auth-benefit"><Check size={16} /> Server-side key validation</div><div className="auth-benefit"><Check size={16} /> Keys expire after 24 hours</div><button className="back-home" onClick={() => setPage('home')}>← Back to home</button></div>
+          <div className="auth-card"><div className="auth-card-top"><div className="auth-mini-icon"><ShieldCheck size={20} /></div><span className="secure-label"><span className="live-dot" /> SERVER VALIDATION</span></div><h2>Get or verify a key</h2><p className="auth-intro">Enter the exact script slug configured by the owner.</p>
+            <form className="auth-form" onSubmit={verifyEnteredKey}>
+              <label>Script slug<input value={verifySlug} onChange={e=>setVerifySlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="e.g. ario-test" required /></label>
+              <label>Access key<input value={verifyKey} onChange={e=>setVerifyKey(e.target.value.toUpperCase())} placeholder="VOID-XX-XXX-XXXX" /></label>
+              <button className="primary-button auth-submit" type="submit" disabled={verifyBusy || !verifyKey.trim()}>{verifyBusy ? 'Checking…' : 'Verify key'} <ShieldCheck size={16} /></button>
+            </form>
+            <button className="secondary-button key-get-button" onClick={requestKey} disabled={verifyBusy || !verifySlug.trim()}>{verifyBusy ? 'Please wait…' : 'Get a new key'} <ArrowRight size={16}/></button>
+            {issuedKey && <div className="issued-key"><b>Your key</b><code>{issuedKey}</code><button className="secondary-button" onClick={()=>{void navigator.clipboard?.writeText(issuedKey);setVerifyMessage('Key copied.');}}>Copy key</button></div>}
+            {verifyMessage && <div className={verifyMessage.toLowerCase().includes('invalid') || verifyMessage.toLowerCase().includes('could not') || verifyMessage.toLowerCase().includes('error') ? 'form-message error' : 'form-message'}>{verifyMessage}</div>}
           </div>
         </section>}
 
