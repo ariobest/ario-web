@@ -38,6 +38,14 @@ export default function App() {
   const [verifyMessage, setVerifyMessage] = useState('');
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [issuedKey, setIssuedKey] = useState('');
+  const [adminTab, setAdminTab] = useState<'overview'|'verification'>('overview');
+  const [scriptRows, setScriptRows] = useState<Array<{id:string;name:string;slug:string;status:string;content:string|null}>>([]);
+  const [scriptName, setScriptName] = useState('');
+  const [scriptSlug, setScriptSlug] = useState('');
+  const [scriptContent, setScriptContent] = useState('');
+  const [scriptStatus, setScriptStatus] = useState<'draft'|'published'>('published');
+  const [scriptBusy, setScriptBusy] = useState(false);
+  const [scriptMessage, setScriptMessage] = useState('');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -58,6 +66,41 @@ export default function App() {
   }, []);
 
   const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
+
+  useEffect(() => {
+    const slug = scriptName.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+    setScriptSlug(slug);
+  }, [scriptName]);
+
+  const loadAdminScripts = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase.from('scripts').select('id,name,slug,status,content').order('created_at', { ascending: false });
+    if (error) { setScriptMessage('Could not load scripts: ' + error.message); return; }
+    setScriptRows((data ?? []) as typeof scriptRows);
+  };
+
+  useEffect(() => {
+    if (page === 'admin' && isAdmin && adminTab === 'verification') void loadAdminScripts();
+  }, [page, isAdmin, adminTab]);
+
+  const saveScript = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supabase || !user || !isAdmin) return;
+    if (!scriptName.trim() || !scriptSlug || !scriptContent.trim()) { setScriptMessage('Enter a script name and its source code.'); return; }
+    setScriptBusy(true); setScriptMessage('');
+    try {
+      const { error } = await supabase.from('scripts').insert({
+        owner_id: user.id, name: scriptName.trim(), slug: scriptSlug, category: 'Utility',
+        description: 'Key-protected script', content: scriptContent, status: scriptStatus,
+      });
+      if (error) throw error;
+      setScriptName(''); setScriptSlug(''); setScriptContent('');
+      setScriptMessage('Script saved. Use the generated slug in your loader.');
+      await loadAdminScripts();
+    } catch (error) {
+      setScriptMessage(error instanceof Error ? error.message : 'Could not save script. Check the database policies.');
+    } finally { setScriptBusy(false); }
+  };
 
   const verifyEnteredKey = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setVerifyBusy(true); setVerifyMessage('Checking key with the server…'); setIssuedKey('');
@@ -225,9 +268,24 @@ export default function App() {
         {page === 'admin' && <section className="admin-layout">
           {!authReady ? <div className="admin-loading">Checking your session…</div> : !isAdmin ? <div className="access-denied"><span className="denied-icon"><ShieldCheck size={27} /></span><h1>Restricted area</h1><p>This dashboard is reserved for the authorized ARIO SCRIPTS owner account.</p><button className="primary-button" onClick={() => setPage('login')}>Sign in as owner <ArrowRight size={16} /></button></div> : <>
             <div className="admin-heading"><div><div className="section-kicker"><ShieldCheck size={14} /> OWNER WORKSPACE</div><h1>Admin <span className="gradient-text">dashboard.</span></h1><p>Signed in as {user?.email}</p></div><span className="admin-pill"><span className="live-dot" /> OWNER ACCESS</span></div>
+            <div className="admin-tabs"><button className={adminTab === 'overview' ? 'admin-tab active' : 'admin-tab'} onClick={() => setAdminTab('overview')}>Overview</button><button className={adminTab === 'verification' ? 'admin-tab active' : 'admin-tab'} onClick={() => { setAdminTab('verification'); setScriptMessage(''); }}>Verification</button></div>
+            {adminTab === 'overview' && <>
             <div className="admin-stat-grid"><div className="admin-stat"><span><Users size={18} /></span><small>Registered users</small><b>—</b><em>Connect database to load</em></div><div className="admin-stat"><span><Code2 size={18} /></span><small>Published scripts</small><b>0</b><em>No sample content loaded</em></div><div className="admin-stat"><span><Activity size={18} /></span><small>Script executions</small><b>—</b><em>Analytics not connected</em></div></div>
             <div className="admin-panel"><div className="admin-panel-heading"><div><h2>Appearance settings</h2><p>Choose the accent theme for this browser.</p></div><Palette size={19} /></div><div className="theme-grid">{themes.map((item) => <button key={item.id} className={theme === item.id ? 'theme-card theme-card-active' : 'theme-card'} onClick={() => setTheme(item.id)}><span className="theme-card-top" style={{ background: `linear-gradient(135deg, ${item.color}44, #12131b 80%)` }}><span style={{ background: item.color }} /></span><b>{item.name}</b><small>{item.description}</small>{theme === item.id && <Check className="theme-check" size={16} />}</button>)}</div></div>
             <div className="notice warning admin-notice"><ShieldCheck size={19} /><span><b>Database features are not connected yet</b><small>Authentication UI is wired to Supabase when your environment variables are configured. Script CRUD, roles, counts, and protected delivery require verified database tables and Row Level Security policies. This dashboard does not pretend those features are live.</small></span></div>
+            </>}
+            {adminTab === 'verification' && <div className="admin-panel verification-panel">
+              <div className="admin-panel-heading"><div><h2>Verification & scripts</h2><p>Create a script and generate its slug automatically. Published scripts can use the key API.</p></div><ShieldCheck size={19}/></div>
+              <form className="auth-form script-create-form" onSubmit={saveScript}>
+                <label>Script name<input value={scriptName} onChange={e=>setScriptName(e.target.value)} placeholder="My Roblox script" required maxLength={120}/></label>
+                <label>Script slug (automatic)<input value={scriptSlug} onChange={e=>setScriptSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g,''))} placeholder="my-roblox-script" required maxLength={80}/><small>Use this exact slug when requesting or verifying a key.</small></label>
+                <label>Script source<textarea value={scriptContent} onChange={e=>setScriptContent(e.target.value)} placeholder="Paste the script source here…" required rows={7}/></label>
+                <label>Status<select value={scriptStatus} onChange={e=>setScriptStatus(e.target.value as 'draft'|'published')}><option value="published">Published — key protected</option><option value="draft">Draft — not available for keys</option></select></label>
+                <button className="primary-button auth-submit" type="submit" disabled={scriptBusy}>{scriptBusy ? 'Saving…' : 'Save protected script'} <ShieldCheck size={16}/></button>
+              </form>
+              {scriptMessage && <div className={scriptMessage.toLowerCase().includes('could not') || scriptMessage.toLowerCase().includes('error') || scriptMessage.toLowerCase().includes('duplicate') ? 'form-message error' : 'form-message'}>{scriptMessage}</div>}
+              <div className="script-list"><h3>Existing scripts</h3>{scriptRows.length === 0 ? <p>No scripts loaded yet.</p> : scriptRows.map(script => <div className="script-row" key={script.id}><div><b>{script.name}</b><code>{script.slug}</code><small>{script.status} · {script.content?.length ?? 0} characters</small></div><button className="secondary-button" onClick={() => { setVerifySlug(script.slug); setPage('verify'); }}>Test key <ArrowRight size={14}/></button></div>)}</div>
+            </div>}
             <div className="admin-footer"><span><UserRound size={15} /> {user?.email}</span><button className="secondary-button" onClick={signOut}><LogOut size={15} /> Sign out</button></div>
           </>}
         </section>}
